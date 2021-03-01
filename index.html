@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>直播测试</title>
+        <style>
+            html,
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+                    Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif,
+                    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+                font-size: 1em;
+            }
+
+            h1 {
+                margin-top: 0;
+            }
+
+            video,
+            #img {
+                width: 40%;
+                border-radius: 5px;
+                border: 1px solid black;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="mainDiv">
+            <h1>
+                <code>直播功能演示</code>
+            </h1>
+
+            <video controls autoplay playsinline muted="false" volume="0"></video>
+            <br />
+            <br />
+            <button id="startLive">开启直播</button>
+            <button id="endLive">关闭直播</button>
+            <button id="photo">截图</button>
+            <a id="a-href" download="download">下载截图</a>
+            <p>
+                <img id="img" src="" alt="" srcset="" />
+            </p>
+        </div>
+        <script src="./fetch.js"></script>
+        <script>
+            fetch.requestInterceptor = config => {
+                config.headers = { 'Content-type': 'application/json', token: 123 }
+                config.timeout = 100
+                return config
+            }
+            fetch.responseInterceptor = response => {
+                return response
+            }
+            fetch({
+                url: '/indexdf.html',
+                timeout: 10,
+                method: 'post',
+                data: {abc: 123}
+            }).then(res => {
+                console.log(res);
+            }).catch(err => {
+                console.log(err)
+            })
+        </script>
+        <script>
+            const video = document.querySelector('video')
+            const button = document.querySelector('#startLive')
+            const button2 = document.querySelector('#endLive')
+            const button3 = document.querySelector('#photo')
+            const img = document.querySelector('#img')
+            const download = document.querySelector('#a-href')
+
+            button2.setAttribute('disabled', 'disabled')
+
+            button.onclick = function () {
+                invokeGetDisplayMedia(stream => {
+                    this.disabled = true
+                    button2.removeAttribute('disabled')
+
+                    video.srcObject = stream
+
+                    // 监听共享结束事件
+                    stream.getVideoTracks()[0].onended = () => {
+                        button.removeAttribute('disabled')
+                        button2.setAttribute('disabled', 'disabled')
+                    }
+                })
+            }
+
+            button2.onclick = function () {
+                this.disabled = true
+                button.removeAttribute('disabled')
+
+                stopCapture(video)
+            }
+
+            button3.onclick = function () {
+                const canvas = document.createElement('canvas')
+                const context = canvas.getContext('2d')
+                canvas.width = window.innerWidth
+                canvas.height = window.innerHeight
+                context.drawImage(video, 0, 0, canvas.width, canvas.height)
+                img.src = canvas.toDataURL('image/png')
+                download.setAttribute('href', img.src)
+            }
+
+            function stopCapture(videoController) {
+                const srcObject = videoController.srcObject
+                if (srcObject && 'getTracks' in srcObject) {
+                    const tracks = srcObject.getTracks()
+                    tracks.forEach(track => track.stop())
+                    videoController.srcObject = null
+                }
+            }
+
+            function invokeGetDisplayMedia(success) {
+                const constraints = { video: true }
+                // 调起摄像头、音频
+                // navigator.mediaDevices.getUserMedia({
+                //     audio: true,
+                //     video: { width: 1280, height: 720 }
+                // })
+                if (navigator.mediaDevices.getDisplayMedia) {
+                    navigator.mediaDevices.getDisplayMedia(constraints).then(success)
+                } else {
+                    navigator.getDisplayMedia(constraints).then(success)
+                }
+            }
+        </script>
+    </body>
+</html>
