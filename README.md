@@ -4,7 +4,7 @@
 
 1. 抹平请求方式的差异
 2. 响应超时功能(终止请求)
-3. 对不同响应数据的转化 --> 目前只转化字符串
+3. 对不同响应数据的转化
 4. Fetch 拦截器
 
 ## 使用
@@ -14,7 +14,7 @@
     // 请求拦截
     fetch.requestInterceptor = config => {
         config.headers = { 'Content-type': 'application/json', token: 123 }
-        config.timeout = 100
+        config.timeout = 15000
         return config
     }
   
@@ -24,10 +24,10 @@
     }
   
     fetch({
-        url: '/indexdf.html',
-        timeout: 10,
+        url: '/index.html',
+        timeout: 10000,
         method: 'post',
-        data: {abc: 123}
+        data: { abc: 123 }
     }).then(res => {
         console.log(res);
     }).catch(err => {
