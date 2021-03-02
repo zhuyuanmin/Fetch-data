@@ -1,6 +1,6 @@
 // 1. 抹平请求方式的差异
 // 2. 响应超时功能(终止请求)
-// 3. 对不同响应数据的转化 --> 目前只转化字符串
+// 3. 对不同响应数据的转化
 // 4. Fetch 拦截器
 
 
@@ -28,7 +28,7 @@ window.fetch = (originalFetch => {
                 setTimeout(() => controller.abort(), ret.timeout)
             }
 
-            const { url, ...options } = ret
+            const { url, timeout, ...options } = ret
             if (options.data) {
                 options.body = typeof options.data === 'object' ? JSON.stringify(options.data) : options.data
                 delete options.data
@@ -38,33 +38,53 @@ window.fetch = (originalFetch => {
             const result = await originalFetch(url, options)
 
             if (result.status === 200) {
-                const res = await result.text()
+                let res
+                const str = result.headers.get('Content-Type').split(';')[0]
+                if (str === 'application/json') {
+                    res = await result.json()
+                } else if (/^text\//.test(str)) {
+                    res = await result.text()
+                } else {
+                    res = await result.blob()
+                }
+        
                 if (window.fetch.responseInterceptor) {
                     return window.fetch.responseInterceptor(res)
                 }
                 return res
             }
+
             return Promise.reject(result)
-            
         } else {
             let result
             if (typeof args === 'string') {
                 result = await originalFetch(args, { signal: controller.signal })
             } else {
                 if (args.url) {
-                    const { url, ...options } = ret
+                    const { url, timeout, ...options } = args
                     if (options.data) {
                         options.body = typeof options.data === 'object' ? JSON.stringify(options.data) : options.data
                         delete options.data
                     }
+
+                    timeout && setTimeout(() => controller.abort(), timeout)
+
                     options.signal = controller.signal
-                    args.timeout && setTimeout(() => controller.abort(), args.timeout)
                     result = await originalFetch(url, options)
                 }
             }
 
             if (result.status === 200) {
-                const res = await result.text()
+                let res
+                const str = result.headers.get('Content-Type').split(';')[0]
+                if (str === 'application/json') {
+                    res = await result.json()
+                } else if (/^text\//.test(str)) {
+                    res = await result.text()
+                } else {
+                    res = await result.blob()
+                }
+
                 if (window.fetch.responseInterceptor) {
                     return window.fetch.responseInterceptor(res)
                 }
@@ -72,6 +92,5 @@ window.fetch = (originalFetch => {
             }
             return Promise.reject(result)
         }
-    
     }
 })(window.fetch)
