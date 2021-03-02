@@ -7,23 +7,29 @@
         <title>测试</title>
     </head>
     <body>
+        <img id="img" src="" alt="" srcset="" />
+        
         <script src="./fetch.js"></script>
         <script>
+            const img = document.querySelector('#img')
+            
             fetch.requestInterceptor = config => {
                 config.headers = { 'Content-type': 'application/json', token: 123 }
-                config.timeout = 100
+                config.timeout = 1000
                 return config
             }
             fetch.responseInterceptor = response => {
                 return response
             }
             fetch({
-                url: '/indexdf.html',
-                timeout: 10,
+                url: '/photo.jpg',
+                timeout: 1000,
                 method: 'post',
-                data: {abc: 123}
+                data: { abc: 123 }
             }).then(res => {
-                console.log(res);
+                console.log(res)
+                const url = URL.createObjectURL(res)
+                img.src = url
             }).catch(err => {
                 console.log(err)
             })
